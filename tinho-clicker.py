@@ -2,12 +2,13 @@ import sys
 import os
 import ctypes
 import tkinter as tk
+import pydirectinput as pdi
+import keyboard as kb
 from time import sleep
 from multiprocessing import Process, freeze_support
 
 # --- FUNÇÃO PARA CORRIGIR CAMINHO NO .EXE ---
 def resource_path(relative_path):
-    """ Retorna o caminho correto para as libs, seja em .py ou em .exe """
     try:
         # Caminho temporário do PyInstaller
         base_path = sys._MEIPASS
@@ -16,12 +17,6 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-try:
-    import libs.pydirectinput as pdi
-    import libs.keyboard as kb
-except ImportError:
-    print("Erro: Pasta 'libs' não encontrada ou incompleta!")
-
 # --- FIX DE NITIDEZ DA TELA ---
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
@@ -29,11 +24,10 @@ except:
     try: ctypes.windll.user32.SetProcessDPIAware()
     except: pass
 
-# tira delay do pydirectinput
-pdi.PAUSE = 0
-
 # a lógica de clicar
 def loop_de_cliques(intervalo, duracao):
+    # tira delay do pydirectinput
+    pdi.PAUSE = 0
     try:
         if duracao == 0:
             while True:
@@ -101,7 +95,7 @@ class App:
                                    bg=cor_fundo, fg="#CC0000")
         self.lbl_status.pack(pady=10)
 
-        kb.on_press_key('f8', self.alternar)
+        kb.add_hotkey('f8', self.alternar)
 
     def ganhar_foco(self, event=None):
         self.root.attributes("-topmost", True)
@@ -110,6 +104,7 @@ class App:
         self.root.attributes("-topmost", False)
 
     def alternar(self, event=None):
+        sleep(0.1) # delay ao segurar f8
         if self.processo is None or not self.processo.is_alive():
             try:
                 txt_int = self.ent_intervalo.get().replace(',', '.')
@@ -132,6 +127,7 @@ class App:
         if self.processo:
             self.processo.terminate()
             self.processo.join()
+            self.processo = None
             try:
                 if self.root.winfo_exists():
                     self.lbl_status.config(text="STATUS: PARADO", fg="#CC0000")
